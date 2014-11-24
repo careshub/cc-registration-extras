@@ -70,6 +70,9 @@ class CC_Registration_Extras {
 		//2a. Disallowing some usernames
 			add_action('bp_signup_validate', array( $this, 'registration_check_disallowed_usernames') );
 
+		//2b. Disallowing some email domains
+			add_action('bp_signup_validate', array( $this, 'registration_check_disallowed_domains') );
+
 		//3. Disable activation e-mail, allowing for instant registration
 			add_action( 'bp_core_signup_user', array( $this, 'disable_validation_of_new_users' ) );
 			add_filter( 'bp_registration_needs_activation', array( $this, 'fix_signup_form_validation_text' ) );
@@ -360,6 +363,47 @@ class CC_Registration_Extras {
 			$bp->signup->errors['signup_username'] = $maybe_error;
 	}
 
+	//2a. Send submitted usernames off to the username laundry
+	public function registration_check_disallowed_domains(){
+		global $bp;
+
+		if ( isset( $_POST[ 'signup_email' ] ) )
+			$maybe_error = $this->email_laundry( $_POST[ 'signup_email' ] );
+
+		if ( ! empty( $maybe_error ) ) 
+			$bp->signup->errors['signup_email'] = $maybe_error;
+	}
+
+	/**
+	 * Check emails for known bad domains
+	 * @since 1.0
+	 */	
+	public function email_laundry( $email ){
+		// Get the domain only
+		$passed_domain = array_pop( explode('@', $email) );
+		// Let's go ahead and account for *.domain.com types, too.
+		// We'll get the last two pieces and reform them into a domain.
+		$domain_parts = explode( '.', $passed_domain );
+		$domain_parts = array_slice( $domain_parts, -2 );
+		$domain = implode('.', $domain_parts);
+
+		$towrite = PHP_EOL . 'passed: ' .  print_r( $passed_domain, TRUE );
+		$towrite .= PHP_EOL . 'parts: ' .  print_r( $domain_parts, TRUE );
+		$towrite .= PHP_EOL . 'final: ' .  print_r( $domain, TRUE );
+		$fp = fopen('reg_domain_parsing.txt', 'a');
+		fwrite($fp, $towrite);
+		fclose($fp);
+
+		$message = '';
+		$illegal_domains = maybe_unserialize( get_option( 'cc_restricted_email_domains' ) );
+
+		if ( in_array( $domain, $illegal_domains ) ) {
+			$message .= 'Sorry, that is a restricted domain.' ;
+		}
+
+		return $message;
+	}
+
 	//3. Disable activation, allowing for instant registration
 	function disable_validation_of_new_users( $user_id ) {
 			global $wpdb;
@@ -539,7 +583,7 @@ class CC_Registration_Extras {
 				$user_name = sanitize_user( $_POST['user_name'] );
 
 				if ( get_user_by( 'login', $user_name ) )
-					$msg = array( 'code' => 'taken', 'message' => __( 'This usename is taken, please choose another one.', $this->plugin_slug ) );
+					$msg = array( 'code' => 'taken', 'message' => __( 'This username is taken, please choose another one.', $this->plugin_slug ) );
 			
 				if ( empty( $msg ) ){
 					$maybe_error = $this->username_laundry( $user_name );
@@ -599,7 +643,14 @@ class CC_Registration_Extras {
 		} else if ( get_user_by( 'email', $_POST['email'] ) ) {
 			$msg = array( 'code' => 'error', 'message' => sprintf( __( 'That email address is already in use. Have you <a href="%s">forgotten your password?</a>', $this->plugin_slug ), wp_lostpassword_url() ) );
 		} else {
-			$msg = array( 'code' => 'success', 'message' => __( 'This email address is valid.', $this->plugin_slug ) );
+			// Finally, check for restricted domains
+			$maybe_error = $this->email_laundry( $_POST['email'] );
+			
+			if ( empty( $maybe_error ) ) {
+				$msg = array( 'code' => 'success', 'message' => __( 'This email address is valid.', $this->plugin_slug ) );
+			} else {
+				$msg = array( 'code' => 'error', 'message' => $maybe_error );
+			}
 		}
 			
 		$msg = apply_filters( 'cc_registration_extras_email_validate_message', $msg );
@@ -616,7 +667,7 @@ class CC_Registration_Extras {
 	    <div id="tos" class="register-section alignright checkbox">
 	        <h4><?php echo  __( 'Terms of Service', $this->plugin_slug )  ?></h4> 
 				<?php do_action( 'bp_accept_tos_errors' ) ?>
-	            <label><input type="checkbox" name="accept_tos" id="accept_tos" value="agreed" /> Accept</label>
+	            <label><input type="checkbox" name="accept_tos" id="accept_tos" value="agreed" <?php checked( $_POST['accept_tos'], 'agreed' ); ?> /> Accept</label>
 	            <p class="description">You must read and accept the <a href="/terms-of-service">Terms of Service</a>.</p>
 	    </div>
 	    <?php

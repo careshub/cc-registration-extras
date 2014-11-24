@@ -46,7 +46,7 @@ function cc_reg_extras_class_init() {
   // Admin and dashboard functionality
   if ( is_admin() && ( ! defined( 'DOING_AJAX' ) || ! DOING_AJAX ) ) {
 
-    // require_once( plugin_dir_path( __FILE__ ) . 'admin/class-cc-group-narratives-admin.php' );
+    require_once( plugin_dir_path( __FILE__ ) . 'admin/class-admin-pane.php' );
     // add_action( 'bp_include', array( 'CC_Group_Narratives_Admin', 'get_instance' ), 21 );
 
   }
