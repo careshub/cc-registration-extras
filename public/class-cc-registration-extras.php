@@ -80,7 +80,7 @@ class CC_Registration_Extras {
 			add_action( 'bp_core_signup_user', array( $this, 'auto_login_redirect_user_to_profile' ), 98 );
 
 		//4. If the user is arriving to the registration form as a result of receiving an invite, fill in both e-mail addresses to be nice.
-			add_action('accept_email_invite_before', array( $this, 'invite_anyone_populate_confirm_email_field' ) );   
+			add_action('accept_email_invite_before', array( $this, 'invite_anyone_populate_confirm_email_field' ) );
 
 		//5. Calculate the user's lat/lon based on their entry in the city and state field. We'll use usermeta for this, so that the user will never see it (and be confused)
 			add_action( 'bp_core_signup_user', array( $this, 'cc_get_user_lat_lon' ), 88 );
@@ -93,7 +93,7 @@ class CC_Registration_Extras {
 			add_action( 'wp_ajax_nopriv_cc_validate_username', array( $this, 'ajax_validate_username' ) );
 			// Email address validation
 			add_action( 'wp_ajax_nopriv_cc_validate_email', array( $this, 'ajax_validate_email' ) );
-		
+
 		//8. Accept Terms of Service Checkbox
 			// Add Terms of Service checkbox to registration form
 			add_action( 'bp_before_registration_submit_buttons', array( $this, 'add_tos_to_registration' ), 8 );
@@ -306,24 +306,24 @@ class CC_Registration_Extras {
 	}
 
 	//1. Add confirm e-mail address on BP registration form
-	public function registration_add_email_confirm(){ 
-		//do_action( 'bp_signup_email_confirm_errors' ); 
+	public function registration_add_email_confirm(){
+		//do_action( 'bp_signup_email_confirm_errors' );
 		?>
 		<label for="signup_email_confirm">Confirm Email <?php _e( '(required)', 'buddypress' ); ?></label>
 		<?php do_action( 'bp_signup_email_confirm_errors' ); ?>
 		<input type="text" name="signup_email_confirm" id="signup_email_confirm" value="<?php
 		echo empty( $_POST['signup_email_confirm'] ) ? '' : $_POST['signup_email_confirm']; ?>" />
 	<?php }
-	 
+
 	// Make sure that the two submitted email addresses match
 	public function registration_check_email_confirm(){
 		global $bp;
- 
+
 		// Check that an email address was submitted
 		$account_details = bp_core_validate_user_signup( $_POST['signup_username'], $_POST['signup_email_confirm'] );
 		if ( ! empty( $account_details['errors']->errors['user_email'] ) )
 				$bp->signup->errors['signup_email_confirm'] = $account_details['errors']->errors['user_email'][0];
- 
+
 		// Check that the two addresses match
 		if ( ! empty( $_POST['signup_email'] ) ){
 			//first field not empty and second field empty
@@ -359,7 +359,7 @@ class CC_Registration_Extras {
 		if ( isset( $_POST[ 'signup_username' ] ) )
 			$maybe_error = $this->username_laundry( $_POST[ 'signup_username' ] );
 
-		if ( ! empty( $maybe_error ) ) 
+		if ( ! empty( $maybe_error ) )
 			$bp->signup->errors['signup_username'] = $maybe_error;
 	}
 
@@ -370,22 +370,27 @@ class CC_Registration_Extras {
 		if ( isset( $_POST[ 'signup_email' ] ) )
 			$maybe_error = $this->email_laundry( $_POST[ 'signup_email' ] );
 
-		if ( ! empty( $maybe_error ) ) 
+		if ( ! empty( $maybe_error ) )
 			$bp->signup->errors['signup_email'] = $maybe_error;
 	}
 
 	/**
 	 * Check emails for known bad domains
 	 * @since 1.0
-	 */	
+	 */
 	public function email_laundry( $email ){
 		// Get the domain only
 		$passed_domain = array_pop( explode('@', $email) );
 		// Let's go ahead and account for *.domain.com types, too.
-		// We'll get the last two pieces and reform them into a domain.
+		// We'll get the last two or three pieces and reform them into a domain.
 		$domain_parts = explode( '.', $passed_domain );
-		$domain_parts = array_slice( $domain_parts, -2 );
-		$domain = implode('.', $domain_parts);
+		// If domain.com, we want two parts; if domain.co.uk, we'll need three parts.
+		// Kind of a hack, check the length of the second-to-last part.
+		end( $domain_parts );
+		$maybe_tld = prev( $domain_parts );
+		$length = ( strlen( $maybe_tld ) < 3 ) ? -3 : -2;
+		$domain_parts = array_slice( $domain_parts, $length );
+		$domain = implode( '.', $domain_parts );
 
 		$towrite = PHP_EOL . 'passed: ' .  print_r( $passed_domain, TRUE );
 		$towrite .= PHP_EOL . 'parts: ' .  print_r( $domain_parts, TRUE );
@@ -413,31 +418,31 @@ class CC_Registration_Extras {
 			// $user_info = get_userdata( $user_id );
 
 			// $args = array(
-			//     'search' => $user_info->user_email, 
-			// ); 
+			//     'search' => $user_info->user_email,
+			// );
 			// $invitee_tax = get_terms( 'ia_invitees', $args );
-			
+
 			//get_terms returns an array if successful, an empty array on failure.
 			// if ( count( $invitee_tax ) > 0 ) {
 
 				//Hook if you want to do something before the activation
 				do_action('bp_disable_activation_before_activation');
-				
+
 				//Need to let bp_core_activate_account do this
 				// $wpdb->query( $wpdb->prepare( "UPDATE $wpdb->users SET user_status = 0 WHERE ID = %d", $user_id ) );
-				
+
 				//Add note on Activity Stream
 				//This is also done in bp_core_activate
 				// if ( function_exists( 'bp_activity_add' ) ) {
 				//   $userlink = bp_core_get_userlink( $user_id );
-					
+
 				//   bp_activity_add( array(
 				//     'user_id' => $user_id,
 				//     'action' => apply_filters( 'bp_core_activity_registered_member', sprintf( __( '%s became a registered member', 'buddypress' ), $userlink ), $user_id ),
 				//     'component' => 'profile',
 				//     'type' => 'new_member'
 				//   ) );
-					
+
 				// }
 
 				//Get the user's activation key for BP. This is the activation_key in user_meta, not the key in the user table. Confusing, eh?
@@ -445,10 +450,10 @@ class CC_Registration_Extras {
 
 				// Activate the signup
 				$awuser = apply_filters( 'bp_core_activate_account', bp_core_activate_signup( $user_key ) );
-				
+
 				//Hook if you want to do something before the login
 				do_action('bp_disable_activation_before_login');
-				
+
 				//Automatically log the user in.
 				//Thanks to Justin Klein's  wp-fb-autoconnect plugin for the basic code to login automatically
 				$user_info = get_userdata($user_id);
@@ -459,7 +464,7 @@ class CC_Registration_Extras {
 				bp_core_add_message( __( 'Your account is now active!', 'buddypress' ) );
 
 				$bp->activation_complete = true;
-				
+
 				//Hook if you want to do something after the login
 				do_action('bp_disable_activation_after_login', $user_id);
 			//} //end check for invitation
@@ -516,7 +521,7 @@ class CC_Registration_Extras {
 		}
 
 		// Get the xprofile data for the city-state entry
-		$location = xprofile_get_field_data( 'City and State', $user_id );
+		$location = xprofile_get_field_data( 'Location', $user_id );
 
 		if ( empty( $location ) ) {
 			//If location is empty, remove the metadata if it exists
@@ -531,12 +536,12 @@ class CC_Registration_Extras {
 			// If location exists, attempt to get the long/lat from the Google geocoder
 			$location = str_replace ( " ", "+", urlencode( $location ) );
 			$details_url = "http://maps.googleapis.com/maps/api/geocode/json?address=" . $location . "&sensor=false";
-		 
+
 			$ch = curl_init();
 			curl_setopt( $ch, CURLOPT_URL, $details_url );
 			curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
 			$response = json_decode( curl_exec($ch), true );
-		 
+
 			// If Status Code is ZERO_RESULTS, OVER_QUERY_LIMIT, REQUEST_DENIED or INVALID_REQUEST
 			if ( $response['status'] != 'OK' ) {
 				// A location is provided, but it's not recognized by Google.
@@ -578,16 +583,16 @@ class CC_Registration_Extras {
 		$fp = fopen('registration_checks.txt', 'a');
 		fwrite($fp, $towrite);
 		fclose($fp);
-		
+
 			if( ! empty( $_POST['user_name'] ) ) {
 				$user_name = sanitize_user( $_POST['user_name'] );
 
 				if ( get_user_by( 'login', $user_name ) )
 					$msg = array( 'code' => 'taken', 'message' => __( 'This username is taken, please choose another one.', $this->plugin_slug ) );
-			
+
 				if ( empty( $msg ) ){
 					$maybe_error = $this->username_laundry( $user_name );
-					
+
 					if ( empty( $maybe_error ) ) {
 						$msg = array( 'code' => 'success', 'message' => __( 'This username is available.', $this->plugin_slug ) );
 					} else {
@@ -597,7 +602,7 @@ class CC_Registration_Extras {
 			} else {
 				$msg = array( 'code' => 'error', 'message' => __( 'You must choose a username.', $this->plugin_slug ) );
 			}
-				
+
 			$msg = apply_filters( 'cc_registration_extras_username_validate_message', $msg );
 
 			die( json_encode( $msg ) );
@@ -606,7 +611,7 @@ class CC_Registration_Extras {
 	/**
 	 * Check usernames for undesirable characters and names we want to exclude
 	 * @since 1.0
-	 */	
+	 */
 	public function username_laundry( $user_name ){
 		// $bp = buddypress();
 		$message = '';
@@ -628,13 +633,13 @@ class CC_Registration_Extras {
 
 		return $message;
 	}
-	
+
 	/**
 	 * Validate email address, checking for well-formedness and duplicates.
 	 * @since 1.0
 	 */
 	public function ajax_validate_email() {
-		
+
 		if ( empty( $_POST['email'] ) )
 			$msg = array( 'code' => 'error', 'message' => __( 'You must enter an email address.', $this->plugin_slug ) );
 
@@ -645,14 +650,14 @@ class CC_Registration_Extras {
 		} else {
 			// Finally, check for restricted domains
 			$maybe_error = $this->email_laundry( $_POST['email'] );
-			
+
 			if ( empty( $maybe_error ) ) {
 				$msg = array( 'code' => 'success', 'message' => __( 'This email address is valid.', $this->plugin_slug ) );
 			} else {
 				$msg = array( 'code' => 'error', 'message' => $maybe_error );
 			}
 		}
-			
+
 		$msg = apply_filters( 'cc_registration_extras_email_validate_message', $msg );
 
 		die( json_encode( $msg ) );
@@ -665,7 +670,7 @@ class CC_Registration_Extras {
 	public function add_tos_to_registration() {
 		?>
 	    <div id="tos" class="register-section alignright checkbox">
-	        <h4><?php echo  __( 'Terms of Service', $this->plugin_slug )  ?></h4> 
+	        <h4><?php echo  __( 'Terms of Service', $this->plugin_slug )  ?></h4>
 				<?php do_action( 'bp_accept_tos_errors' ) ?>
 	            <label><input type="checkbox" name="accept_tos" id="accept_tos" value="agreed" <?php checked( $_POST['accept_tos'], 'agreed' ); ?> /> Accept</label>
 	            <p class="description">You must read and accept the <a href="/terms-of-service">Terms of Service</a>.</p>
@@ -679,7 +684,7 @@ class CC_Registration_Extras {
 	 */
 	public function registration_check_tos(){
 		global $bp;
- 
+
 		if ( $_POST['accept_tos'] != 'agreed' )
 			$bp->signup->errors['accept_tos'] = 'You must read and accept the Terms of Service.';
 	}
@@ -689,7 +694,7 @@ class CC_Registration_Extras {
 	 * @since 1.0
 	 */
 	function add_usermeta_at_signup( $usermeta ) {
-		
+
 		$usermeta['accept_tos'] = $_POST['accept_tos'];
 
 		$towrite = PHP_EOL . print_r( $usermeta, TRUE );
