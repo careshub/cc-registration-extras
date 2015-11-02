@@ -77,7 +77,8 @@ class CC_Registration_Extras {
 			add_action( 'bp_core_signup_user', array( $this, 'disable_validation_of_new_users' ) );
 			add_filter( 'bp_registration_needs_activation', array( $this, 'fix_signup_form_validation_text' ) );
 			add_filter( 'bp_core_signup_send_activation_key', array( $this, 'disable_activation_email' ) );
-			add_action( 'bp_core_signup_user', array( $this, 'auto_login_redirect_user_to_profile' ), 98 );
+			// add_action( 'bp_core_signup_user', array( $this, 'auto_login_redirect_user_to_profile' ), 98 );
+			add_action( 'bp_core_signup_user', array( $this, 'auto_login_redirect_user_to_welcome_page' ), 98 );
 
 		//4. If the user is arriving to the registration form as a result of receiving an invite, fill in both e-mail addresses to be nice.
 			add_action('accept_email_invite_before', array( $this, 'invite_anyone_populate_confirm_email_field' ) );
@@ -462,9 +463,14 @@ class CC_Registration_Extras {
 
 				do_action('wp_signon', $user_info->user_login);
 
-				bp_core_add_message( __( 'Your account is now active!', 'buddypress' ) );
+				// bp_core_add_message( __( 'Your account is now active!', 'buddypress' ) );
+				$learn_more_url = site_url( '/2015/01/heres-what-you-can-do-on-community-commons/' );
 
-				$bp->activation_complete = true;
+				$message = 'Welcome to Community Commons! <a href="' . $learn_more_url . '">Learn more</a> about what you can do here. Or, <a href="http://maps.communitycommons.org/">make a map</a> or <a href="http://assessment.communitycommons.org/CHNA/SelectArea.aspx?reporttype=libraryCHNA">build a report</a>.';
+
+				bp_core_add_message( $message );
+
+				buddypress()->activation_complete = true;
 
 				//Hook if you want to do something after the login
 				do_action('bp_disable_activation_after_login', $user_id);
@@ -484,6 +490,12 @@ class CC_Registration_Extras {
 	//When we log in the users after successfully signing up, send them to their profile page
 	public function auto_login_redirect_user_to_profile( $user_id ) {
 		bp_core_redirect( bp_core_get_user_domain( $user_id ) );
+	}
+
+	//When we log in the users after successfully signing up, send them to their profile page
+	public function auto_login_redirect_user_to_welcome_page( $user_id ) {
+		$redirect = apply_filters( 'cc_redirect_after_signup', site_url( '2015/01/heres-what-you-can-do-on-community-commons/' ) );
+		bp_core_redirect( $redirect );
 	}
 
 	//4. If the user is arriving to the registration form as a result of receiving an invite, fill in both e-mail addresses to be nice.
