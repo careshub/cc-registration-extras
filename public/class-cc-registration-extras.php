@@ -102,8 +102,9 @@ class CC_Registration_Extras {
 			// Add "Terms of Service" acceptance to usermeta on signup
 			add_filter( 'bp_signup_usermeta', array( $this, 'add_usermeta_at_signup' ) );
 
-
-
+		//9. Google ReCAPTCHA
+			// Align the box to the right
+			add_filter( 'ncr_bp_register_section_class', array( $this, 'captcha_align_right' ) );
 
 	}
 
@@ -703,5 +704,13 @@ class CC_Registration_Extras {
 		fclose($fp);
 
 		return $usermeta;
+	}
+	/**
+	 * 9. Google ReCAPTCHA
+	 * Align the box to the right.
+	 * @since 1.0
+	 */
+	public function captcha_align_right( $class ) {
+		return $class . ' alignright';
 	}
 }
