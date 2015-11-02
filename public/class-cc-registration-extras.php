@@ -311,10 +311,12 @@ class CC_Registration_Extras {
 	public function registration_add_email_confirm(){
 		//do_action( 'bp_signup_email_confirm_errors' );
 		?>
-		<label for="signup_email_confirm">Confirm Email <?php _e( '(required)', 'buddypress' ); ?></label>
-		<?php do_action( 'bp_signup_email_confirm_errors' ); ?>
-		<input type="text" name="signup_email_confirm" id="signup_email_confirm" value="<?php
-		echo empty( $_POST['signup_email_confirm'] ) ? '' : $_POST['signup_email_confirm']; ?>" />
+		<div class="editfield">
+			<label for="signup_email_confirm">Confirm Email <?php _e( '(required)', 'buddypress' ); ?></label>
+			<?php do_action( 'bp_signup_email_confirm_errors' ); ?>
+			<input type="text" name="signup_email_confirm" id="signup_email_confirm" value="<?php
+			echo empty( $_POST['signup_email_confirm'] ) ? '' : $_POST['signup_email_confirm']; ?>" />
+		</div>
 	<?php }
 
 	// Make sure that the two submitted email addresses match
