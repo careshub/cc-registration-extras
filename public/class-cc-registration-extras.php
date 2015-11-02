@@ -97,7 +97,7 @@ class CC_Registration_Extras {
 
 		//8. Accept Terms of Service Checkbox
 			// Add Terms of Service checkbox to registration form
-			add_action( 'bp_before_registration_submit_buttons', array( $this, 'add_tos_to_registration' ), 8 );
+			add_action( 'bp_before_registration_submit_buttons', array( $this, 'add_tos_to_registration' ), 81 );
 			// Make sure user accepted TOS before allowing signup
 			add_filter( 'bp_signup_validate', array( $this, 'registration_check_tos') );
 			// Add "Terms of Service" acceptance to usermeta on signup
@@ -683,10 +683,12 @@ class CC_Registration_Extras {
 	public function add_tos_to_registration() {
 		?>
 	    <div id="tos" class="register-section alignright checkbox">
-	        <h4><?php echo  __( 'Terms of Service', $this->plugin_slug )  ?></h4>
+			<div class="editfield">
+		        <label for="accept_tos"><?php echo  __( 'Community Commons Terms of Service', $this->plugin_slug )  ?></label>
 				<?php do_action( 'bp_accept_tos_errors' ) ?>
 	            <label><input type="checkbox" name="accept_tos" id="accept_tos" value="agreed" <?php checked( $_POST['accept_tos'], 'agreed' ); ?> /> Accept</label>
-	            <p class="description">You must read and accept the <a href="/terms-of-service">Terms of Service</a>.</p>
+	            <p class="description">You must read and accept the Community Commons <a target="_blank" href="/terms-of-service">Terms of Service</a>.</p>
+            </div>
 	    </div>
 	    <?php
 	}
