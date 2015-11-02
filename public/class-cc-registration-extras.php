@@ -65,7 +65,7 @@ class CC_Registration_Extras {
 			add_action('bp_signup_validate', array( $this, 'registration_check_email_confirm' ) );
 
 		//2. A splogger check on the registration form field "About Me"
-			add_action('bp_signup_validate', array( $this, 'registration_check_about_me_weed_sploggers' ) );
+			// add_action('bp_signup_validate', array( $this, 'registration_check_about_me_weed_sploggers' ) );
 
 		//2a. Disallowing some usernames
 			add_action('bp_signup_validate', array( $this, 'registration_check_disallowed_usernames') );
