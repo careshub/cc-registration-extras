@@ -84,8 +84,8 @@ class CC_Registration_Extras {
 			add_action('accept_email_invite_before', array( $this, 'invite_anyone_populate_confirm_email_field' ) );
 
 		//5. Calculate the user's lat/lon based on their entry in the city and state field. We'll use usermeta for this, so that the user will never see it (and be confused)
-			add_action( 'bp_core_signup_user', array( $this, 'cc_get_user_lat_lon' ), 88 );
-			add_action( 'xprofile_updated_profile', array( $this, 'cc_get_user_lat_lon' ), 88 );
+			add_action( 'bp_core_signup_user', array( $this, 'cc_get_user_lat_lon_at_signup' ), 88 );
+			add_action( 'xprofile_updated_profile', array( $this, 'cc_get_user_lat_lon_at_profile_update' ), 88, 5 );
 
 		//6. Handle the Terms of Service checkbox as a usermeta form field rather than an xprofile field.
 
@@ -515,9 +515,11 @@ class CC_Registration_Extras {
 		endif;
 	}
 
-	//5. Calculate the user's lat/lon based on their entry in the city and state field. We'll use usermeta for this, so that the user will never see it (and be confused)
-	public function cc_get_user_lat_lon( $user_id ) {
-		$towrite = PHP_EOL . print_r( date('Y-m-d H:i:s'), TRUE );
+	//5. Calculate the user's lat/lon based on their entry in the city and state field. We'll use usermeta for this, so that the user will never see it (and be confused).
+
+	// Add the user meta at succesful login.
+	public function cc_get_user_lat_lon_at_signup( $user_id ) {
+		$towrite = PHP_EOL . print_r( date('Y-m-d H:i:s'), TRUE ) . ' | signup';
 		$fp = fopen('geocoder_results.txt', 'a');
 		fwrite($fp, $towrite);
 		fclose($fp);
@@ -529,7 +531,7 @@ class CC_Registration_Extras {
 			fclose($fp);
 			return false;
 		} else {
-			$towrite = ' | ' . print_r( $user_id, TRUE );
+			$towrite = ' | User ID: ' . print_r( $user_id, TRUE );
 			$fp = fopen('geocoder_results.txt', 'a');
 			fwrite($fp, $towrite);
 			fclose($fp);
@@ -538,51 +540,134 @@ class CC_Registration_Extras {
 		// Get the xprofile data for the city-state entry
 		$location = xprofile_get_field_data( 'Location', $user_id );
 
-		if ( empty( $location ) ) {
-			//If location is empty, remove the metadata if it exists
+		if ( ! empty( $location ) ) {
+			// If location exists, attempt to get the long/lat from the Google geocoder.
+			$coordinates = $this->get_long_lat_from_location( $location );
+			if ( $coordinates ) {
+				add_user_meta( $user_id, 'long_lat', $coordinates );
+				$towrite = PHP_EOL . 'Adding meta, coords: ' . print_r( $coordinates, true );
+				$fp = fopen('geocoder_results.txt', 'a');
+				fwrite($fp, $towrite);
+				fclose($fp);
+			} else {
+				$towrite = PHP_EOL . 'Did not add meta, no coords.';
+				$fp = fopen('geocoder_results.txt', 'a');
+				fwrite($fp, $towrite);
+				fclose($fp);
+			}
+		}
+	}
+
+	// Update meta entry based on profile updates.
+	public function cc_get_user_lat_lon_at_profile_update( $user_id, $posted_field_ids = array(), $errors = false, $old_values = array(), $new_values = array() ) {
+		$towrite = PHP_EOL . print_r( date('Y-m-d H:i:s'), TRUE ) . ' | profile updated';
+		$fp = fopen('geocoder_results.txt', 'a');
+		fwrite($fp, $towrite);
+		fclose($fp);
+
+		if ( empty( $user_id ) ) {
+			$towrite = ' | User ID is empty';
+			$fp = fopen('geocoder_results.txt', 'a');
+			fwrite($fp, $towrite);
+			fclose($fp);
+			return false;
+		} else {
+			$towrite = ' | User ID: ' . print_r( $user_id, TRUE );
+			$fp = fopen('geocoder_results.txt', 'a');
+			fwrite($fp, $towrite);
+			fclose($fp);
+		}
+
+		// Get the xprofile data for the city-state entry
+		$location_field_id = xprofile_get_field_id_from_name( 'Location' );
+
+		// Only continue if the Location field was updated.
+		if ( ! in_array( $location_field_id, $posted_field_ids ) ) {
+			$towrite = ' | Location field was not updated';
+			$fp = fopen('geocoder_results.txt', 'a');
+			fwrite($fp, $towrite);
+			fclose($fp);
+			return;
+		}
+
+		// Troubleshooting
+		// $towrite = PHP_EOL . 'posted_field_ids: ' . print_r( $posted_field_ids, TRUE );
+		// $towrite .= PHP_EOL . 'old values: ' . print_r( $old_values, TRUE );
+		// $towrite .= PHP_EOL . 'new values: ' . print_r( $new_values, TRUE );
+		// $fp = fopen('geocoder_results.txt', 'a');
+		// fwrite($fp, $towrite);
+		// fclose($fp);
+
+		// If location exists, and has changed, attempt to get the long/lat from the Google geocoder.
+		if ( empty( $new_values[$location_field_id]['value'] ) && ! empty( $old_values[$location_field_id]['value'] ) ) {
 			$removed = delete_user_meta( $user_id, 'long_lat' );
-			$towrite = ' | Location is empty';
+			$towrite = ' | Removing meta, new value is empty.';
+			$fp = fopen('geocoder_results.txt', 'a');
+			fwrite($fp, $towrite);
+			fclose($fp);
+		} elseif ( $old_values[$location_field_id]['value'] != $new_values[$location_field_id]['value'] ) {
+			$coordinates = $this->get_long_lat_from_location( $new_values[$location_field_id]['value'] );
+			if ( $coordinates ) {
+				update_user_meta( $user_id, 'long_lat', $coordinates );
+				$towrite = ' | Updating meta., coords: ' . print_r( $coordinates, true );
+				$fp = fopen('geocoder_results.txt', 'a');
+				fwrite($fp, $towrite);
+				fclose($fp);
+			} else {
+				// If no coords were returned, we should delete any value that exists.
+				$removed = delete_user_meta( $user_id, 'long_lat' );
+				$towrite = ' | Removing meta, geocoder error.';
+				$fp = fopen('geocoder_results.txt', 'a');
+				fwrite($fp, $towrite);
+				fclose($fp);
+			}
+
+		} else {
+			$towrite = ' | No change to meta.';
+			$fp = fopen('geocoder_results.txt', 'a');
+			fwrite($fp, $towrite);
+			fclose($fp);
+		}
+	}
+
+	// Send a location string to Google and return a long_lat string
+	public function get_long_lat_from_location( $location = '' ){
+		if ( empty( $location ) ) {
+			return false;
+		}
+		$location = urlencode( $location );
+
+		$details_url = "http://maps.googleapis.com/maps/api/geocode/json?address=" . $location . "&sensor=false";
+		$coordinates = false;
+
+		$ch = curl_init();
+		curl_setopt( $ch, CURLOPT_URL, $details_url );
+		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
+		$response = json_decode( curl_exec($ch), true );
+
+		// If Status Code is ZERO_RESULTS, OVER_QUERY_LIMIT, REQUEST_DENIED or INVALID_REQUEST
+		if ( $response['status'] != 'OK' ) {
+			// A location is provided, but it's not recognized by Google.
+			$removed = delete_user_meta( $user_id, 'long_lat' );
+			$towrite = ' | Geocoder error status: ' . print_r( $response['status'], TRUE );
 			$fp = fopen('geocoder_results.txt', 'a');
 			fwrite($fp, $towrite);
 			fclose($fp);
 
-			return $removed;
-		} else {
-			// If location exists, attempt to get the long/lat from the Google geocoder
-			$location = str_replace ( " ", "+", urlencode( $location ) );
-			$details_url = "http://maps.googleapis.com/maps/api/geocode/json?address=" . $location . "&sensor=false";
-
-			$ch = curl_init();
-			curl_setopt( $ch, CURLOPT_URL, $details_url );
-			curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
-			$response = json_decode( curl_exec($ch), true );
-
-			// If Status Code is ZERO_RESULTS, OVER_QUERY_LIMIT, REQUEST_DENIED or INVALID_REQUEST
-			if ( $response['status'] != 'OK' ) {
-				// A location is provided, but it's not recognized by Google.
-				$removed = delete_user_meta( $user_id, 'long_lat' );
-				$towrite = ' | Geocoder error status: ' . print_r( $response['status'], TRUE );
-				$fp = fopen('geocoder_results.txt', 'a');
-				fwrite($fp, $towrite);
-				fclose($fp);
-
-				return $response['status'];
-			}
-
-			if ( $geometry = $response['results'][0]['geometry'] ) {
-				$longitude = $geometry['location']['lng'];
-				$latitude = $geometry['location']['lat'];
-				$coordinates = (string) $longitude . ',' . (string) $latitude;
-				// Write the result to the usermeta table
-				$success = update_user_meta( $user_id, 'long_lat', $coordinates );
-				$towrite = ' | Updated user location meta';
-				$fp = fopen('geocoder_results.txt', 'a');
-				fwrite($fp, $towrite);
-				fclose($fp);
-
-				return $success;
-			}
+			return false;
 		}
+
+		if ( $geometry = $response['results'][0]['geometry'] ) {
+			$longitude = $geometry['location']['lng'];
+			$latitude = $geometry['location']['lat'];
+			$coordinates = (string) $longitude . ',' . (string) $latitude;
+			// Write the result to the usermeta table
+			$towrite = ' | Returned good results';
+			$fp = fopen('geocoder_results.txt', 'a');
+			fwrite($fp, $towrite);
+			fclose($fp);
+		}
+		return $coordinates;
 	}
 
 	// AJAX validation
