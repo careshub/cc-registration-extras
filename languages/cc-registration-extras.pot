@@ -1,0 +1,60 @@
+# Copyright (C) 2015 
+# This file is distributed under the same license as the  package.
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: http://wordpress.org/support/plugin/functions\n"
+"POT-Creation-Date: 2015-11-03 21:35:12+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2015-MO-DA HO:MI+ZONE\n"
+"Last-Translator: Community Commons <info@communitycommons.org>\n"
+"Language-Team: ENGLISH <info@communitycommons.org>\n"
+"X-Generator: grunt-wp-i18n 0.4.8\n"
+
+#: admin/class-admin-pane.php:57
+msgid "Options saved"
+msgstr ""
+
+#: public/class-cc-registration-extras.php:315
+msgid "(required)"
+msgstr ""
+
+#: public/class-cc-registration-extras.php:354
+msgid "Sorry, something went deeply and seriously wrong with your registration"
+msgstr ""
+
+#: public/class-cc-registration-extras.php:691
+msgid "This username is taken, please choose another one."
+msgstr ""
+
+#: public/class-cc-registration-extras.php:697
+msgid "This username is available."
+msgstr ""
+
+#: public/class-cc-registration-extras.php:703
+msgid "You must choose a username."
+msgstr ""
+
+#: public/class-cc-registration-extras.php:744
+msgid "You must enter an email address."
+msgstr ""
+
+#: public/class-cc-registration-extras.php:747
+msgid "Please enter a valid email address."
+msgstr ""
+
+#: public/class-cc-registration-extras.php:749
+msgid ""
+"That email address is already in use. Have you <a href=\"%s\">forgotten "
+"your password?</a>"
+msgstr ""
+
+#: public/class-cc-registration-extras.php:755
+msgid "This email address is valid."
+msgstr ""
+
+#: public/class-cc-registration-extras.php:774
+msgid "Community Commons Terms of Service"
+msgstr ""
