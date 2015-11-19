@@ -36,6 +36,9 @@ jQuery(document).ready(function(){
 		jQuery("#email_checker span.loading").css({display:'none'});
 		jQuery("#email_checker #email-info").empty().html( msg );
 
+		// Also remove the BP-produced error message if one exists.
+		jQuery( "#email_checker, #email-comparer" ).parent().children( ".error" ).hide();
+
 		if(is_error)
 			jQuery("#email_checker #email-info").addClass("error");
 		else

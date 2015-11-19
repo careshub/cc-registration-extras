@@ -15,6 +15,9 @@ jQuery(document).ready(function(){
 		var second_value = jQuery("#signup_email_confirm").val();
 		jQuery('#email-comparison-message').removeClass().css({display:'block'});
 
+		// Also remove the BP-produced error message if one exists.
+		jQuery( "#email_checker, #email-comparer" ).parent().children( ".error" ).hide();
+
 		if ( first_value != second_value ) {
 			jQuery('#email-comparison-message').addClass( 'error' );
 			jQuery('#email-comparison-message').empty().html( 'The addresses you entered do not match.' );
