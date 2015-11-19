@@ -605,7 +605,7 @@ class CC_Registration_Extras {
 			$fp = fopen('geocoder_results.txt', 'a');
 			fwrite($fp, $towrite);
 			fclose($fp);
-		} elseif ( $old_values[$location_field_id]['value'] != $new_values[$location_field_id]['value'] ) {
+		} elseif ( $old_values[$location_field_id]['value'] !== $new_values[$location_field_id]['value'] ) {
 			$coordinates = $this->get_long_lat_from_location( $new_values[$location_field_id]['value'] );
 			if ( $coordinates ) {
 				update_user_meta( $user_id, 'long_lat', $coordinates );
