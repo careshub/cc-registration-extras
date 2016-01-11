@@ -538,7 +538,8 @@ class CC_Registration_Extras {
 		}
 
 		// Get the xprofile data for the city-state entry
-		$location = xprofile_get_field_data( 'Location', $user_id );
+		// $location = xprofile_get_field_data( 'Location', $user_id );
+		$location = $this->get_location_field_id();
 
 		if ( ! empty( $location ) ) {
 			// If location exists, attempt to get the long/lat from the Google geocoder.
@@ -579,7 +580,8 @@ class CC_Registration_Extras {
 		}
 
 		// Get the xprofile data for the city-state entry
-		$location_field_id = xprofile_get_field_id_from_name( 'Location' );
+		// $location_field_id = xprofile_get_field_id_from_name( 'Location' );
+		$location_field_id = $this->get_location_field_id();
 
 		// Only continue if the Location field was updated.
 		if ( ! in_array( $location_field_id, $posted_field_ids ) ) {
@@ -813,5 +815,26 @@ class CC_Registration_Extras {
 	 */
 	public function captcha_align_right( $class ) {
 		return $class . ' alignright';
+	}
+
+	/**
+	 * Helper function to return the field ID of the location field, since
+	 * relying on the name is fragile--the name could and has changed.
+	 *
+	 */
+	public function get_location_field_id() {
+	    $location = get_site_url();
+	    switch ( $location ) {
+	        case 'http://commonsdev.local':
+	            $field_id = 15;
+	            break;
+	        case 'http://dev.communitycommons.org':
+   	        case 'http://staging.communitycommons.org':
+	        case 'http://www.communitycommons.org':
+	        default:
+	            $field_id = 470;
+	            break;
+		}
+	    return apply_filters( 'cc_reg_get_location_field_id', $field_id );
 	}
 }
