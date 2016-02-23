@@ -73,6 +73,9 @@ class CC_Registration_Extras {
 		//2b. Disallowing some email domains
 			add_action('bp_signup_validate', array( $this, 'registration_check_disallowed_domains') );
 
+		//2c. Check that the entry for the ZIP code field is a 5-digit or ZIP+4 ZIP code.
+			add_action('bp_signup_validate', array( $this, 'registration_check_zip_field') );
+
 		//3. Disable activation e-mail, allowing for instant registration
 			add_action( 'bp_core_signup_user', array( $this, 'disable_validation_of_new_users' ) );
 			add_filter( 'bp_registration_needs_activation', array( $this, 'fix_signup_form_validation_text' ) );
@@ -411,6 +414,16 @@ class CC_Registration_Extras {
 		}
 
 		return $message;
+	}
+
+
+	//2c. Check that the entry for the ZIP code field is a 5-digit or ZIP+4 ZIP code.
+	public function registration_check_zip_field() {
+		// ZIP is field_470 on dev, staging and root.
+		$field_name = 'field_470';
+		if ( empty( $_POST[$field_name] ) || ! preg_match( "/^([0-9]{5})(-[0-9]{4})?$/i", $_POST[$field_name] ) ) {
+			buddypress()->signup->errors[$field_name] = 'Please enter a 5-digit ZIP code.';
+		}
 	}
 
 	//3. Disable activation, allowing for instant registration
