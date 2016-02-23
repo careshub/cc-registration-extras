@@ -696,15 +696,15 @@ class CC_Registration_Extras {
 	 */
 	public function add_tos_to_registration() {
 		?>
-	    <div id="tos" class="register-section alignright checkbox">
+		<div id="tos" class="register-section alignright checkbox">
 			<div class="editfield">
-		        <label for="accept_tos"><?php echo  __( 'Community Commons Terms of Service', $this->plugin_slug )  ?></label>
+				<label for="accept_tos"><?php echo  __( 'Community Commons Terms of Service', $this->plugin_slug )  ?></label>
 				<?php do_action( 'bp_accept_tos_errors' ) ?>
-	            <label><input type="checkbox" name="accept_tos" id="accept_tos" value="agreed" <?php checked( $_POST['accept_tos'], 'agreed' ); ?> /> Accept</label>
-	            <p class="description">You must read and accept the Community Commons <a target="_blank" href="/terms-of-service">Terms of Service</a>.</p>
-            </div>
-	    </div>
-	    <?php
+				<label><input type="checkbox" name="accept_tos" id="accept_tos" value="agreed" <?php checked( $_POST['accept_tos'], 'agreed' ); ?> /> Accept</label>
+				<p class="description">You must read and accept the Community Commons <a target="_blank" href="/terms-of-service">Terms of Service</a>.</p>
+			</div>
+		</div>
+		<?php
 	}
 
 	/**
@@ -741,18 +741,18 @@ class CC_Registration_Extras {
 	 *
 	 */
 	public function get_location_field_id() {
-	    $location = get_site_url();
-	    switch ( $location ) {
-	        case 'http://commonsdev.local':
-	            $field_id = 15;
-	            break;
-	        case 'http://dev.communitycommons.org':
-   	        case 'http://staging.communitycommons.org':
-	        case 'http://www.communitycommons.org':
-	        default:
-	            $field_id = 470;
-	            break;
+		$location = get_site_url();
+		switch ( $location ) {
+			case 'http://commonsdev.local':
+				$field_id = 15;
+				break;
+			case 'http://dev.communitycommons.org':
+			case 'http://staging.communitycommons.org':
+			case 'http://www.communitycommons.org':
+			default:
+				$field_id = 470;
+				break;
 		}
-	    return apply_filters( 'cc_reg_get_location_field_id', $field_id );
+		return apply_filters( 'cc_reg_get_location_field_id', $field_id );
 	}
 }
