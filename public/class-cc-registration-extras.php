@@ -399,13 +399,6 @@ class CC_Registration_Extras {
 		$domain_parts = array_slice( $domain_parts, $length );
 		$domain = implode( '.', $domain_parts );
 
-		$towrite = PHP_EOL . 'passed: ' .  print_r( $passed_domain, TRUE );
-		$towrite .= PHP_EOL . 'parts: ' .  print_r( $domain_parts, TRUE );
-		$towrite .= PHP_EOL . 'final: ' .  print_r( $domain, TRUE );
-		$fp = fopen('reg_domain_parsing.txt', 'a');
-		fwrite($fp, $towrite);
-		fclose($fp);
-
 		$message = '';
 		$illegal_domains = maybe_unserialize( get_option( 'cc_restricted_email_domains' ) );
 
@@ -532,22 +525,8 @@ class CC_Registration_Extras {
 
 	// Add the user meta at succesful login.
 	public function cc_get_user_lat_lon_at_signup( $user_id ) {
-		$towrite = PHP_EOL . print_r( date('Y-m-d H:i:s'), TRUE ) . ' | signup';
-		$fp = fopen('geocoder_results.txt', 'a');
-		fwrite($fp, $towrite);
-		fclose($fp);
-
 		if ( empty( $user_id ) ) {
-			$towrite = ' | User ID is empty';
-			$fp = fopen('geocoder_results.txt', 'a');
-			fwrite($fp, $towrite);
-			fclose($fp);
 			return false;
-		} else {
-			$towrite = ' | User ID: ' . print_r( $user_id, TRUE );
-			$fp = fopen('geocoder_results.txt', 'a');
-			fwrite($fp, $towrite);
-			fclose($fp);
 		}
 
 		// Get the xprofile data for the city-state entry
@@ -559,37 +538,15 @@ class CC_Registration_Extras {
 			$coordinates = $this->get_long_lat_from_location( $location );
 			if ( $coordinates ) {
 				add_user_meta( $user_id, 'long_lat', $coordinates );
-				$towrite = PHP_EOL . 'Adding meta, coords: ' . print_r( $coordinates, true );
-				$fp = fopen('geocoder_results.txt', 'a');
-				fwrite($fp, $towrite);
-				fclose($fp);
-			} else {
-				$towrite = PHP_EOL . 'Did not add meta, no coords.';
-				$fp = fopen('geocoder_results.txt', 'a');
-				fwrite($fp, $towrite);
-				fclose($fp);
 			}
 		}
 	}
 
 	// Update meta entry based on profile updates.
 	public function cc_get_user_lat_lon_at_profile_update( $user_id, $posted_field_ids = array(), $errors = false, $old_values = array(), $new_values = array() ) {
-		$towrite = PHP_EOL . print_r( date('Y-m-d H:i:s'), TRUE ) . ' | profile updated';
-		$fp = fopen('geocoder_results.txt', 'a');
-		fwrite($fp, $towrite);
-		fclose($fp);
 
 		if ( empty( $user_id ) ) {
-			$towrite = ' | User ID is empty';
-			$fp = fopen('geocoder_results.txt', 'a');
-			fwrite($fp, $towrite);
-			fclose($fp);
 			return false;
-		} else {
-			$towrite = ' | User ID: ' . print_r( $user_id, TRUE );
-			$fp = fopen('geocoder_results.txt', 'a');
-			fwrite($fp, $towrite);
-			fclose($fp);
 		}
 
 		// Get the xprofile data for the city-state entry
@@ -598,50 +555,21 @@ class CC_Registration_Extras {
 
 		// Only continue if the Location field was updated.
 		if ( ! in_array( $location_field_id, $posted_field_ids ) ) {
-			$towrite = ' | Location field was not updated';
-			$fp = fopen('geocoder_results.txt', 'a');
-			fwrite($fp, $towrite);
-			fclose($fp);
 			return;
 		}
-
-		// Troubleshooting
-		// $towrite = PHP_EOL . 'posted_field_ids: ' . print_r( $posted_field_ids, TRUE );
-		// $towrite .= PHP_EOL . 'old values: ' . print_r( $old_values, TRUE );
-		// $towrite .= PHP_EOL . 'new values: ' . print_r( $new_values, TRUE );
-		// $fp = fopen('geocoder_results.txt', 'a');
-		// fwrite($fp, $towrite);
-		// fclose($fp);
 
 		// If location exists, and has changed, attempt to get the long/lat from the Google geocoder.
 		if ( empty( $new_values[$location_field_id]['value'] ) && ! empty( $old_values[$location_field_id]['value'] ) ) {
 			$removed = delete_user_meta( $user_id, 'long_lat' );
-			$towrite = ' | Removing meta, new value is empty.';
-			$fp = fopen('geocoder_results.txt', 'a');
-			fwrite($fp, $towrite);
-			fclose($fp);
 		} elseif ( $old_values[$location_field_id]['value'] !== $new_values[$location_field_id]['value'] ) {
 			$coordinates = $this->get_long_lat_from_location( $new_values[$location_field_id]['value'] );
 			if ( $coordinates ) {
 				update_user_meta( $user_id, 'long_lat', $coordinates );
-				$towrite = ' | Updating meta., coords: ' . print_r( $coordinates, true );
-				$fp = fopen('geocoder_results.txt', 'a');
-				fwrite($fp, $towrite);
-				fclose($fp);
 			} else {
 				// If no coords were returned, we should delete any value that exists.
 				$removed = delete_user_meta( $user_id, 'long_lat' );
-				$towrite = ' | Removing meta, geocoder error.';
-				$fp = fopen('geocoder_results.txt', 'a');
-				fwrite($fp, $towrite);
-				fclose($fp);
 			}
 
-		} else {
-			$towrite = ' | No change to meta.';
-			$fp = fopen('geocoder_results.txt', 'a');
-			fwrite($fp, $towrite);
-			fclose($fp);
 		}
 	}
 
@@ -664,11 +592,6 @@ class CC_Registration_Extras {
 		if ( $response['status'] != 'OK' ) {
 			// A location is provided, but it's not recognized by Google.
 			$removed = delete_user_meta( $user_id, 'long_lat' );
-			$towrite = ' | Geocoder error status: ' . print_r( $response['status'], TRUE );
-			$fp = fopen('geocoder_results.txt', 'a');
-			fwrite($fp, $towrite);
-			fclose($fp);
-
 			return false;
 		}
 
@@ -676,11 +599,6 @@ class CC_Registration_Extras {
 			$longitude = $geometry['location']['lng'];
 			$latitude = $geometry['location']['lat'];
 			$coordinates = (string) $longitude . ',' . (string) $latitude;
-			// Write the result to the usermeta table
-			$towrite = ' | Returned good results';
-			$fp = fopen('geocoder_results.txt', 'a');
-			fwrite($fp, $towrite);
-			fclose($fp);
 		}
 		return $coordinates;
 	}
@@ -693,34 +611,28 @@ class CC_Registration_Extras {
 	 * @since 1.0
 	 */
 	public function ajax_validate_username() {
+		if( ! empty( $_POST['user_name'] ) ) {
+			$user_name = sanitize_user( $_POST['user_name'] );
 
-		$towrite = PHP_EOL . 'beginning username validation: ' . print_r($_POST, TRUE);
-		$fp = fopen('registration_checks.txt', 'a');
-		fwrite($fp, $towrite);
-		fclose($fp);
+			if ( get_user_by( 'login', $user_name ) )
+				$msg = array( 'code' => 'taken', 'message' => __( 'This username is taken, please choose another one.', $this->plugin_slug ) );
 
-			if( ! empty( $_POST['user_name'] ) ) {
-				$user_name = sanitize_user( $_POST['user_name'] );
+			if ( empty( $msg ) ){
+				$maybe_error = $this->username_laundry( $user_name );
 
-				if ( get_user_by( 'login', $user_name ) )
-					$msg = array( 'code' => 'taken', 'message' => __( 'This username is taken, please choose another one.', $this->plugin_slug ) );
-
-				if ( empty( $msg ) ){
-					$maybe_error = $this->username_laundry( $user_name );
-
-					if ( empty( $maybe_error ) ) {
-						$msg = array( 'code' => 'success', 'message' => __( 'This username is available.', $this->plugin_slug ) );
-					} else {
-						$msg = array( 'code' => 'error', 'message' => $maybe_error );
-					}
+				if ( empty( $maybe_error ) ) {
+					$msg = array( 'code' => 'success', 'message' => __( 'This username is available.', $this->plugin_slug ) );
+				} else {
+					$msg = array( 'code' => 'error', 'message' => $maybe_error );
 				}
-			} else {
-				$msg = array( 'code' => 'error', 'message' => __( 'You must choose a username.', $this->plugin_slug ) );
 			}
+		} else {
+			$msg = array( 'code' => 'error', 'message' => __( 'You must choose a username.', $this->plugin_slug ) );
+		}
 
-			$msg = apply_filters( 'cc_registration_extras_username_validate_message', $msg );
+		$msg = apply_filters( 'cc_registration_extras_username_validate_message', $msg );
 
-			die( json_encode( $msg ) );
+		die( json_encode( $msg ) );
 	}
 
 	/**
@@ -811,14 +723,7 @@ class CC_Registration_Extras {
 	 * @since 1.0
 	 */
 	function add_usermeta_at_signup( $usermeta ) {
-
 		$usermeta['accept_tos'] = $_POST['accept_tos'];
-
-		$towrite = PHP_EOL . print_r( $usermeta, TRUE );
-		$fp = fopen('usermeta_transport.txt', 'a');
-		fwrite($fp, $towrite);
-		fclose($fp);
-
 		return $usermeta;
 	}
 	/**
