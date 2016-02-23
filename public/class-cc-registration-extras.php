@@ -420,7 +420,7 @@ class CC_Registration_Extras {
 	//2c. Check that the entry for the ZIP code field is a 5-digit or ZIP+4 ZIP code.
 	public function registration_check_zip_field() {
 		// ZIP is field_470 on dev, staging and root.
-		$field_name = 'field_470';
+		$field_name = 'field_' . $this->get_location_field_id();
 		if ( empty( $_POST[$field_name] ) || ! preg_match( "/^([0-9]{5})(-[0-9]{4})?$/i", $_POST[$field_name] ) ) {
 			buddypress()->signup->errors[$field_name] = 'Please enter a 5-digit ZIP code.';
 		}
