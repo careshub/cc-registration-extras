@@ -699,12 +699,13 @@ class CC_Registration_Extras {
 	 * @since 1.0
 	 */
 	public function add_tos_to_registration() {
+		$accept_tos = isset( $_POST['accept_tos'] ) ? $_POST['accept_tos'] : false;
 		?>
 		<div id="tos" class="register-section alignright checkbox">
 			<div class="editfield">
 				<label for="accept_tos"><?php echo  __( 'Community Commons Terms of Service', $this->plugin_slug )  ?></label>
 				<?php do_action( 'bp_accept_tos_errors' ) ?>
-				<label><input type="checkbox" name="accept_tos" id="accept_tos" value="agreed" <?php checked( $_POST['accept_tos'], 'agreed' ); ?> /> Accept</label>
+				<label><input type="checkbox" name="accept_tos" id="accept_tos" value="agreed" <?php checked( $accept_tos, 'agreed' ); ?> /> Accept</label>
 				<p class="description">You must read and accept the Community Commons <a target="_blank" href="/terms-of-service">Terms of Service</a>.</p>
 			</div>
 		</div>
@@ -718,7 +719,7 @@ class CC_Registration_Extras {
 	public function registration_check_tos(){
 		global $bp;
 
-		if ( $_POST['accept_tos'] != 'agreed' )
+		if ( ! isset( $_POST['accept_tos'] ) || $_POST['accept_tos'] != 'agreed' )
 			$bp->signup->errors['accept_tos'] = 'You must read and accept the Terms of Service.';
 	}
 
@@ -745,7 +746,7 @@ class CC_Registration_Extras {
 	 *
 	 */
 	public function get_location_field_id() {
-		$location = get_site_url();
+		$location = get_site_url( null, '', 'http' );
 		switch ( $location ) {
 			case 'http://commonsdev.local':
 				$field_id = 15;
