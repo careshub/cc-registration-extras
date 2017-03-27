@@ -23,7 +23,7 @@ class CC_Registration_Extras {
 	 *
 	 * @var     string
 	 */
-	const VERSION = '1.1.0';
+	const VERSION = '1.3.0';
 
 	/**
 	 *
@@ -310,7 +310,7 @@ class CC_Registration_Extras {
 	 */
 	public function enqueue_scripts() {
 		if ( bp_is_register_page() )
-			wp_enqueue_script( $this->plugin_slug . '-plugin-script', plugins_url( 'assets/js/public.min.js', __FILE__ ), array( 'jquery' ), self::VERSION );
+			wp_enqueue_script( $this->plugin_slug . '-plugin-script', plugins_url( 'assets/js/public.min.js', __FILE__ ), array( 'jquery' ), self::VERSION, true );
 	}
 
 	//1. Add confirm e-mail address on BP registration form
@@ -515,13 +515,11 @@ class CC_Registration_Extras {
 	public function invite_anyone_populate_confirm_email_field() {
 		if ( bp_is_register_page() ) :
 		?>
-
-		<script type="text/javascript">
-			jQuery(document).ready( function() {
-				jQuery("input#signup_email_confirm").val("<?php echo urldecode( bp_action_variable( 0 ) ); ?>");
-			});
-		</script>
-
+			<script type="text/javascript">
+				jQuery(document).ready( function() {
+					jQuery("input#signup_email_confirm").val("<?php echo urldecode( bp_action_variable( 0 ) ); ?>");
+				});
+			</script>
 		<?php
 		endif;
 	}
@@ -673,21 +671,22 @@ class CC_Registration_Extras {
 	public function ajax_validate_email() {
 
 		if ( empty( $_POST['email'] ) )
-			$msg = array( 'code' => 'error', 'message' => __( 'You must enter an email address.', $this->plugin_slug ) );
+			$msg = array( 'code' => 'error', 'valid_address_message' => __( 'You must enter an email address.', $this->plugin_slug ) );
 
 		if ( ! is_email( $_POST['email'] ) ) {
-			$msg = array( 'code' => 'error', 'message' => __( 'Please enter a valid email address.', $this->plugin_slug ) );
+			$msg = array( 'valid_address' => 0, 'valid_address_message' => __( 'Please enter a valid email address.', $this->plugin_slug ) );
 		} else if ( get_user_by( 'email', $_POST['email'] ) ) {
-			$msg = array( 'code' => 'error', 'message' => sprintf( __( 'That email address is already in use. Have you <a href="%s">forgotten your password?</a>', $this->plugin_slug ), wp_lostpassword_url() ) );
+			$msg = array( 'valid_address' => 0, 'valid_address_message' => sprintf( __( 'That email address is already in use. Have you <a href="%s">forgotten your password?</a>', $this->plugin_slug ), wp_lostpassword_url() ) );
 		} else {
 			// Finally, check for restricted domains
 			$maybe_error = $this->email_laundry( $_POST['email'] );
 
 			if ( empty( $maybe_error ) ) {
-				$msg = array( 'code' => 'success', 'message' => __( 'This email address is valid.', $this->plugin_slug ) );
+				$msg = array( 'valid_address' => 1, 'valid_address_message' => __( 'This email address is valid.', $this->plugin_slug ) );
 			} else {
-				$msg = array( 'code' => 'error', 'message' => $maybe_error );
+				$msg = array( 'valid_address' => 0, 'valid_address_message' => $maybe_error );
 			}
+
 		}
 
 		$msg = apply_filters( 'cc_registration_extras_email_validate_message', $msg );

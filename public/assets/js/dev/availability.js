@@ -1,11 +1,17 @@
-jQuery(document).ready(function(){
+(function ( $ ) {
+	"use strict";
 	var timer = 0;
 
 	jQuery("input#signup_username").wrap('<div id="username_checker" class="ajax-validation"></div> ');
 	jQuery("#username_checker").append("<span class='loading' style='display:none'></span>")
 	jQuery("#username_checker").append("<span id='name-info'></span> ");
 
-	jQuery("input#signup_username").keyup( function() {
+	// Check the form on load if there are values to check.
+	if ( $( "#signup_username" ).val() ) {
+		ajax_check_username();
+	}
+
+	jQuery("input#signup_username").on( "keyup change", function() {
 		clearTimeout( timer );
 		timer = setTimeout( ajax_check_username, 500 );
 	} );
@@ -43,4 +49,4 @@ jQuery(document).ready(function(){
 		else
 			jQuery("#username_checker #name-info").addClass("validated");
 	}
-});
+}(jQuery));

@@ -7,8 +7,8 @@
  * @copyright 2014 CommmunityCommons.org
  *
  * Plugin Name: CC Registration Form Extras
- * Description: Adds e-mail confirmation field, a splogger check on the "About Me" field and provides instant registration (disables BuddyPress e-mail account verification).  
- * Version: 0.1
+ * Description: Adds e-mail confirmation field, a splogger check on the "About Me" field and provides instant registration (disables BuddyPress e-mail account verification).
+ * Version: 1.3
  * Requires at least: 3.5
  * Tested up to: 3.6
  * License: GPL3
