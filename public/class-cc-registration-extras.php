@@ -80,7 +80,7 @@ class CC_Registration_Extras {
 
 
 		//3. Disable activation e-mail, allowing for instant registration
-			add_action( 'bp_core_signup_user', array( $this, 'disable_validation_of_new_users' ) );
+			add_action( 'bp_core_signup_user', array( $this, 'disable_validation_of_new_users' ), 10, 4 );
 			add_filter( 'bp_registration_needs_activation', array( $this, 'fix_signup_form_validation_text' ) );
 			add_filter( 'bp_core_signup_send_activation_key', array( $this, 'disable_activation_email' ) );
 			// add_action( 'bp_core_signup_user', array( $this, 'auto_login_redirect_user_to_profile' ), 98 );
@@ -428,8 +428,6 @@ class CC_Registration_Extras {
 		}
 	}
 
-	//3. Disable activation, allowing for instant registration
-	function disable_validation_of_new_users( $user_id ) {
 	/**
 	 * 2d. Verify the value of the ZIP code input on the profile update form.
 	 *     Check that the entry for the ZIP code field is a 5-digit or ZIP+4 ZIP code.
@@ -451,68 +449,45 @@ class CC_Registration_Extras {
 		return $valid;
 	}
 
+	/**
+	 * 3. Disable activation, allowing for instant registration
+	 *
+	 * @param bool|WP_Error   $user_id       True on success, WP_Error on failure.
+	 * @param string          $user_login    Login name requested by the user.
+	 * @param string          $user_password Password requested by the user.
+	 * @param string          $user_email    Email address requested by the user.
+	 */
+	function disable_validation_of_new_users( $user_id, $user_login, $user_password, $user_email ) {
 			global $wpdb;
 
-			// No one will have to activate anymore, but let's keep this code just in case.
-			//Get user e-mail, then check if that email is on our invitee list
-			// $user_info = get_userdata( $user_id );
+			// Hook if you want to do something before the activation
+			do_action('bp_disable_activation_before_activation');
 
-			// $args = array(
-			//     'search' => $user_info->user_email,
-			// );
-			// $invitee_tax = get_terms( 'ia_invitees', $args );
 
-			//get_terms returns an array if successful, an empty array on failure.
-			// if ( count( $invitee_tax ) > 0 ) {
+			//Get the user's activation key for BP. This is the activation_key in user_meta, not the key in the user table. Confusing, eh?
+			$user_key = get_user_meta($user_id, 'activation_key', TRUE);
 
-				//Hook if you want to do something before the activation
-				do_action('bp_disable_activation_before_activation');
+			// Activate the signup
+			$awuser = apply_filters( 'bp_core_activate_account', bp_core_activate_signup( $user_key ) );
 
-				//Need to let bp_core_activate_account do this
-				// $wpdb->query( $wpdb->prepare( "UPDATE $wpdb->users SET user_status = 0 WHERE ID = %d", $user_id ) );
+			$learn_more_url = site_url( '/2015/01/heres-what-you-can-do-on-community-commons/' );
+			$message = 'Welcome to Community Commons! <a href="' . $learn_more_url . '">Learn more</a> about what you can do here. Or, <a href="http://maps.communitycommons.org/">make a map</a> or <a href="http://assessment.communitycommons.org/CHNA/SelectArea.aspx?reporttype=libraryCHNA">build a report</a>.';
 
-				//Add note on Activity Stream
-				//This is also done in bp_core_activate
-				// if ( function_exists( 'bp_activity_add' ) ) {
-				//   $userlink = bp_core_get_userlink( $user_id );
+			bp_core_add_message( $message );
+			buddypress()->activation_complete = true;
 
-				//   bp_activity_add( array(
-				//     'user_id' => $user_id,
-				//     'action' => apply_filters( 'bp_core_activity_registered_member', sprintf( __( '%s became a registered member', 'buddypress' ), $userlink ), $user_id ),
-				//     'component' => 'profile',
-				//     'type' => 'new_member'
-				//   ) );
+			$user = get_userdata($user_id);
 
-				// }
+			// Hook if you want to do something before the login
+			do_action( 'cc_registration_extras_before_auto_login', $user );
 
-				//Get the user's activation key for BP. This is the activation_key in user_meta, not the key in the user table. Confusing, eh?
-				$user_key = get_user_meta($user_id, 'activation_key', TRUE);
+			$logged_in_user = wp_signon( array(
+				'user_login' => $user_email,
+				'user_password' => $user_password
+			) );
 
-				// Activate the signup
-				$awuser = apply_filters( 'bp_core_activate_account', bp_core_activate_signup( $user_key ) );
-
-				//Hook if you want to do something before the login
-				do_action('bp_disable_activation_before_login');
-
-				//Automatically log the user in.
-				//Thanks to Justin Klein's  wp-fb-autoconnect plugin for the basic code to login automatically
-				$user_info = get_userdata($user_id);
-				wp_set_auth_cookie($user_id);
-
-				do_action('wp_signon', $user_info->user_login);
-
-				// bp_core_add_message( __( 'Your account is now active!', 'buddypress' ) );
-				$learn_more_url = site_url( '/2015/01/heres-what-you-can-do-on-community-commons/' );
-
-				$message = 'Welcome to Community Commons! <a href="' . $learn_more_url . '">Learn more</a> about what you can do here. Or, <a href="http://maps.communitycommons.org/">make a map</a> or <a href="http://assessment.communitycommons.org/CHNA/SelectArea.aspx?reporttype=libraryCHNA">build a report</a>.';
-
-				bp_core_add_message( $message );
-
-				buddypress()->activation_complete = true;
-
-				//Hook if you want to do something after the login
-				do_action('bp_disable_activation_after_login', $user_id);
-			//} //end check for invitation
+			// Hook if you want to do something after the login
+			do_action( 'cc_registration_extras_after_auto_login', $user );
 		}
 
 	//Don't show the user the screen that says "We're sending you an email..."
