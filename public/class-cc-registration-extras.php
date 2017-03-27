@@ -73,8 +73,11 @@ class CC_Registration_Extras {
 		//2b. Disallowing some email domains
 			add_action('bp_signup_validate', array( $this, 'registration_check_disallowed_domains') );
 
-		//2c. Check that the entry for the ZIP code field is a 5-digit or ZIP+4 ZIP code.
+		//2c. Check that the entry for the ZIP code field on the registration form is a 5-digit or ZIP+4 ZIP code.
 			add_action('bp_signup_validate', array( $this, 'registration_check_zip_field') );
+		//2d. Verify the value of the ZIP code input on the profile update form.
+			add_filter(	'xprofile_data_is_valid_field', array( $this, 'profile_update_check_zip_field' ), 10, 2 );
+
 
 		//3. Disable activation e-mail, allowing for instant registration
 			add_action( 'bp_core_signup_user', array( $this, 'disable_validation_of_new_users' ) );
@@ -409,18 +412,45 @@ class CC_Registration_Extras {
 		return $message;
 	}
 
-
-	//2c. Check that the entry for the ZIP code field is a 5-digit or ZIP+4 ZIP code.
+	/**
+	 * 2c. Verify the value of the ZIP code input on the registration form.
+	 *     Check that the entry for the ZIP code field is a 5-digit or ZIP+4 ZIP code.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return buddypress registration form error notice
+	 */
 	public function registration_check_zip_field() {
 		// ZIP is field_470 on dev, staging and root.
 		$field_name = 'field_' . $this->get_location_field_id();
-		if ( empty( $_POST[$field_name] ) || ! preg_match( "/^([0-9]{5})(-[0-9]{4})?$/i", $_POST[$field_name] ) ) {
+		if ( isset( $_POST[$field_name] ) && ( empty( $_POST[$field_name] ) || ! preg_match( "/^([0-9]{5})(-[0-9]{4})?$/i", $_POST[$field_name] ) ) ) {
 			buddypress()->signup->errors[$field_name] = 'Please enter a 5-digit ZIP code.';
 		}
 	}
 
 	//3. Disable activation, allowing for instant registration
 	function disable_validation_of_new_users( $user_id ) {
+	/**
+	 * 2d. Verify the value of the ZIP code input on the profile update form.
+	 *     Check that the entry for the ZIP code field is a 5-digit or ZIP+4 ZIP code.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param bool                    $valid Whether or not data is valid.
+	 * @param BP_XProfile_ProfileData $field Instance of the current BP_XProfile_ProfileData class.
+	 *
+	 * @return bool $valid
+	 */
+	public function profile_update_check_zip_field( $valid, $field ) {
+		// Check that the CC ZIP Code profile field is a ZIP code
+		if ( $field->field_id == $this->get_location_field_id() ) {
+			if ( ! preg_match( "/^([0-9]{5})(-[0-9]{4})?$/i", $field->value ) ) {
+				$valid = false;
+			}
+		}
+		return $valid;
+	}
+
 			global $wpdb;
 
 			// No one will have to activate anymore, but let's keep this code just in case.
