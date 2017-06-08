@@ -42,7 +42,7 @@
 		jQuery("#username_checker #name-info").empty().html(msg);
 
 		// Also remove the BP-produced error message if one exists.
-		jQuery( "#username_checker" ).parent().children( ".error" ).hide();
+		// jQuery( "#username_checker" ).parent().children( ".error" ).hide();
 
 		if(is_error)
 			jQuery("#username_checker #name-info").addClass("error");
