@@ -19,12 +19,10 @@
 	function ajax_check_username() {
 		jQuery("#username_checker span.loading").css({display:'block'});
 
-		var user_name = jQuery("input#signup_username").val();
-
 		jQuery.post( ajaxurl, {
 			action: 'cc_validate_username',
 			// 'cookie': encodeURIComponent(document.cookie),
-			'user_name':user_name
+			'user_name':jQuery("input#signup_username").val()
 		},
 		function( response ){
 			var resp = jQuery.parseJSON( response );

@@ -364,13 +364,14 @@ class CC_Registration_Extras {
 
 	//2a. Send submitted usernames off to the username laundry
 	public function registration_check_disallowed_usernames(){
-		global $bp;
-
-		if ( isset( $_POST[ 'signup_username' ] ) )
+		if ( isset( $_POST[ 'signup_username' ] ) ) {
 			$maybe_error = $this->username_laundry( $_POST[ 'signup_username' ] );
+		}
 
-		if ( ! empty( $maybe_error ) )
+		if ( ! empty( $maybe_error ) ) {
+			$bp = buddypress();
 			$bp->signup->errors['signup_username'] = $maybe_error;
+		}
 	}
 
 	//2a. Send submitted usernames off to the username laundry
@@ -609,28 +610,20 @@ class CC_Registration_Extras {
 	// AJAX validation
 	/**
 	 * Check username availability
-	 * Code mostly by Brajesh Singh
-	 * http://buddydev.com/buddypress/creating-a-buddypress-wordpress-username-availability-checker-for-your-site/
 	 * @since 1.0
 	 */
 	public function ajax_validate_username() {
 		if( ! empty( $_POST['user_name'] ) ) {
-			$user_name = sanitize_user( $_POST['user_name'] );
-
-			if ( get_user_by( 'login', $user_name ) )
-				$msg = array( 'code' => 'taken', 'message' => __( 'This username is taken, please choose another one.', $this->plugin_slug ) );
-
-			if ( empty( $msg ) ){
-				$maybe_error = $this->username_laundry( $user_name );
-
-				if ( empty( $maybe_error ) ) {
-					$msg = array( 'code' => 'success', 'message' => __( 'This username is available.', $this->plugin_slug ) );
-				} else {
-					$msg = array( 'code' => 'error', 'message' => $maybe_error );
-				}
-			}
+			$maybe_error = $this->username_laundry( $_POST['user_name'] );
 		} else {
-			$msg = array( 'code' => 'error', 'message' => __( 'You must choose a username.', $this->plugin_slug ) );
+			$maybe_error = __( 'You must choose a username.', $this->plugin_slug );
+		}
+
+		if ( empty( $maybe_error ) ) {
+			$msg = array( 'code' => 'success', 'message' => __( 'This username is available.', $this->plugin_slug ) );
+		} else {
+			// $msg = array( 'code' => 'error', 'message' => "humph" );
+			$msg = array( 'code' => 'error', 'message' => $maybe_error );
 		}
 
 		$msg = apply_filters( 'cc_registration_extras_username_validate_message', $msg );
@@ -642,26 +635,49 @@ class CC_Registration_Extras {
 	 * Check usernames for undesirable characters and names we want to exclude
 	 * @since 1.0
 	 */
-	public function username_laundry( $user_name ){
-		// $bp = buddypress();
-		$message = '';
-		$db_illegal_names = get_option( 'illegal_names' );
+	public function username_laundry( $user_name ) {
+	    $maybe_error = array();
 
-		// If the field contains one of several certain values, don't allow.
-		$disallowed_usernames = array( 'support' );
-		$illegal_names = array_merge( $db_illegal_names, $disallowed_usernames );
+		// Some username-specific checks from wpmu_validate_user_signup
+	    // $user_name = preg_replace( '/\s+/', '', sanitize_user( $_POST['user_name'], true ) );
+	    // $user_name = $_POST['user_name'];
 
-		foreach ( $illegal_names as $bad_name ) {
-			if ( stripos( $user_name, $bad_name ) !== false )
-				$message .= 'Sorry, usernames may not include "' . $bad_name . '". ' ;
+		// User name must pass WP's validity check.
+		if ( ! validate_username( $user_name ) ) {
+			 $maybe_error[] = __( 'Usernames can contain only letters, numbers, ., -, and @.', 'buddypress' );
 		}
 
-		if ( strpos( $user_name, ' ') )
-			$message .= 'Please do not use blank spaces in your username.';
+		// User name can't be on the blacklist.
+		$illegal_names = get_site_option( 'illegal_names' );
+		if ( in_array( $user_name, (array) $illegal_names ) ) {
+			$maybe_error[] = __( 'That username is not allowed.', 'buddypress' );
+		}
 
+		/** This filter is documented in wp-includes/user.php */
+		$illegal_logins = (array) apply_filters( 'illegal_user_logins', array() );
+		if ( in_array( strtolower( $user_name ), array_map( 'strtolower', $illegal_logins ) ) ) {
+			$maybe_error[] = __( 'Sorry, that username is not allowed.' );
+		}
 
+		if ( strlen( $user_name ) < 4 ) {
+			$maybe_error[] = __( 'Username must be at least 4 characters.' );
+		}
 
-		return $message;
+		if ( strlen( $user_name ) > 60 ) {
+			$maybe_error[] = __( 'Username may not be longer than 60 characters.' );
+		}
+
+		// all numeric?
+		if ( preg_match( '/^[0-9]*$/', $user_name ) ) {
+			$maybe_error[] = __( 'Sorry, usernames must have letters, too.' );
+		}
+
+		// Check if the username has been used already.
+		if ( username_exists( $user_name ) ) {
+			$maybe_error[] = __( 'Sorry, that username is already in use.' );
+		}
+
+		return implode( ' ', $maybe_error );
 	}
 
 	/**
