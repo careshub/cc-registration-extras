@@ -87,6 +87,9 @@ class CC_Registration_Extras {
 			add_filter( 'bp_core_signup_send_activation_key', array( $this, 'disable_activation_email' ) );
 			// add_action( 'bp_core_signup_user', array( $this, 'auto_login_redirect_user_to_profile' ), 98 );
 			add_action( 'bp_core_signup_user', array( $this, 'auto_login_redirect_user_to_welcome_page' ), 98 );
+			// Set the redirect on the registration page load hook instead.
+			add_filter( 'bp_loggedin_register_page_redirect_to', array( $this, 'loggedin_register_page_redirect_to' ) );
+
 
 		//4. If the user is arriving to the registration form as a result of receiving an invite, fill in both e-mail addresses to be nice.
 			add_action('accept_email_invite_before', array( $this, 'invite_anyone_populate_confirm_email_field' ) );
@@ -528,6 +531,11 @@ class CC_Registration_Extras {
 	public function auto_login_redirect_user_to_welcome_page( $user_id ) {
 		$redirect = apply_filters( 'cc_redirect_after_signup', site_url( '2015/01/heres-what-you-can-do-on-community-commons/' ) );
 		bp_core_redirect( $redirect );
+	}
+
+	public function loggedin_register_page_redirect_to( $redirect_to ) {
+		$redirect_to = apply_filters( 'cc_redirect_after_signup', site_url( '2015/01/heres-what-you-can-do-on-community-commons/' ) );
+		return $redirect_to;
 	}
 
 	//4. If the user is arriving to the registration form as a result of receiving an invite, fill in both e-mail addresses to be nice.
