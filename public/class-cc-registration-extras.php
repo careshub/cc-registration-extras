@@ -78,6 +78,8 @@ class CC_Registration_Extras {
 		//2d. Verify the value of the ZIP code input on the profile update form.
 			add_filter(	'xprofile_data_is_valid_field', array( $this, 'profile_update_check_zip_field' ), 10, 2 );
 
+			// add_action( 'bp_signup_validate', array( $this, 'record_registration_attempts' ), 99 );
+
 
 		//3. Disable activation e-mail, allowing for instant registration
 			add_action( 'bp_core_signup_user', array( $this, 'disable_validation_of_new_users' ), 10, 4 );
@@ -427,6 +429,22 @@ class CC_Registration_Extras {
 		if ( isset( $_POST[$field_name] ) && ( empty( $_POST[$field_name] ) || ! preg_match( "/^([0-9]{5})(-[0-9]{4})?$/i", $_POST[$field_name] ) ) ) {
 			buddypress()->signup->errors[$field_name] = 'Please enter a 5-digit ZIP code.';
 		}
+	}
+
+	public function record_registration_attempts() {
+		$email_address = ! empty( $_POST['signup_email'] ) ? $_POST['signup_email'] : 'no email';
+		$row = array( date("Y-m-d H:i:s"), $email_address );
+
+		$errors = buddypress()->signup->errors;
+		if ( is_array( $errors ) ) {
+			foreach ( $errors as $key => $error ) {
+				$row[] = "{$key}: {$error}";
+			}
+		}
+		$fp = fopen( '/var/www/ccproduction/public_html/wp-content/registration_tracking.csv', 'a' );
+		// $fp = fopen( 'registration_tracking.csv', 'a' );
+		fputcsv( $fp, $row );
+		fclose( $fp );
 	}
 
 	/**
